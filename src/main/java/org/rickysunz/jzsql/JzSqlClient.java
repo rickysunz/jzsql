@@ -1,6 +1,11 @@
 package org.rickysunz.jzsql;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class JzSqlClient {
@@ -11,8 +16,12 @@ public class JzSqlClient {
 		
 	}
 	
-	public JzSqlClient(Connection connection) {
-		this.connection = connection;
+	public JzSqlClient(Connection conn) {
+		this.connection = conn;
+	}
+	
+	private Connection getConnection() {
+		return connection;
 	}
 	
 	public int insert(Object item) {
@@ -27,16 +36,47 @@ public class JzSqlClient {
 		return 0;
 	}
 	
-	public int execute(String sql,Object ... param) {
+	public int execute(String sql,Object ... params) {
 		return 0;
 	}
 	
-	public List<Object> query(String sql) {
+	public <E> List<E> query(String sql, Class<E> elementClass) throws Exception {
+		Connection conn = null;
+		PreparedStatement stmt = null;
+		ResultSet rs = null;
+		try {
+			conn = getConnection();
+			stmt = conn.prepareStatement(sql);
+			rs = stmt.executeQuery();
+			
+			List<E> result = new ArrayList<E>();
+			ResultSetMetaData rsmd = rs.getMetaData();
+			
+			while(rs.next()) {
+				E element = elementClass.newInstance();
+				result.add(element);
+			}
+			
+			return result;
+			
+		} finally {
+			closeQuietly(rs);
+			closeQuietly(stmt);
+			closeQuietly(conn);
+		}
+	}
+	
+	public <E> List<E> query(String sql, Object ... params) {
+		
 		return null;
 	}
 	
-	public List<Object> query(String sql, Object ... param) {
-		return null;
+	private void closeQuietly(AutoCloseable closeable) {
+		try {
+			if(closeable!=null) closeable.close();
+		} catch (Exception ex) {
+			
+		}
 	}
 
 }
